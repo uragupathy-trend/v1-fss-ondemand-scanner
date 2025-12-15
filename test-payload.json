@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "timestamp": "2025-12-15 01:37:45 UTC",
+  "source_bucket": "customer-scan-bucket",
+  "scanner_mode": "MOVE_MALWARE_ONLY",
+  "results": {
+    "total": 3,
+    "scanned": 3,
+    "clean": 2,
+    "malware": 1,
+    "errors": 0,
+    "skipped": 0,
+    "duration": 0.2855522632598877
+  },
+  "performance": {
+    "files_per_second": 10.51,
+    "duration_seconds": 0.29
+  }
+}

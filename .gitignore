@@ -1,0 +1,170 @@
+# ========================================
+# Terraform files
+# ========================================
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+terraform.tfplan
+terraform.tfplan.*
+*.tfvars.backup
+terraform.tfvars
+
+# Keep the example file
+!terraform.tfvars.example
+
+# ========================================
+# Sensitive Configuration Files
+# ========================================
+# OCI credentials and keys
+*.pem
+*.key
+.oci/
+auth_tokens.txt
+config
+
+# Vision One API keys and secrets
+v1_api_key.txt
+*.secret
+secrets.json
+
+# ========================================
+# Function and Container Files
+# ========================================
+# Function deployment artifacts
+function.zip
+*.zip
+function-output.txt
+
+# Docker build context and images
+.dockerignore
+docker-compose.override.yml
+*.tar
+
+# ========================================
+# General files
+# ========================================
+.DS_Store
+*.log
+*.tmp
+*.temp
+logs/
+
+# ========================================
+# IDE and Editor files
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# ========================================
+# Python cache and environments
+# ========================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python virtual environments
+bin/
+include/
+lib/
+lib64/
+share/
+pyvenv.cfg
+
+# ========================================
+# OS generated files
+# ========================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+
+# ========================================
+# Testing and Development
+# ========================================
+test-results/
+coverage/
+*.coverage
+.nyc_output
+.pytest_cache/
+
+# Test files with sensitive data
+test_credentials.json
+test_secrets.txt
+
+# ========================================
+# Backup and Temporary files
+# ========================================
+*.bak
+*.backup
+*.orig
+*.rej
+*~
+
+# ========================================
+# OCI and Cloud specific
+# ========================================
+# OCI CLI configuration
+.oci_cli_rc
+oci_cli_rc
+
+# Cloud service credentials
+gcp_credentials.json
+aws_credentials.txt
+
+# ========================================
+# Build artifacts and dependencies
+# ========================================
+node_modules/
+dist/
+build/
+target/
+*.jar
+*.war
+
+# ========================================
+# Documentation build
+# ========================================
+_build/
+.doctrees/
+site/
+
+# ========================================
+# Archive and compressed files
+# ========================================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.tar.gz
+*.zip
+
+# ========================================
+# Miscellaneous
+# ========================================
+.cache/
+.tmp/
+*.pid
+*.seed
+*.pid.lock
