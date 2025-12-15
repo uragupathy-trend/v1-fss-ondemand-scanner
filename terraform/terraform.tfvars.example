@@ -1,101 +1,39 @@
-# ========================================
-# Vision One File Security Ondemand Scanner
-# Terraform Variables Configuration Template
-# ========================================
+# OCI Authentication
+tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaas......."
+user_ocid        = "ocid1.user.oc1..aaaaaaaam3sa........"
+fingerprint      = "07:32:eb:4f:5d:22:b0:3f:d7:22:c1:22:f9:1a:8c:11"
+private_key_path = ""
+region           = "ap-sydney-1"
 
-# Copy this file to terraform.tfvars and fill in your actual values
-# cp terraform.tfvars.example terraform.tfvars
+# Compartment and Network
+compartment_id = "ocid1.tenancy.oc1..aaaaaaaas....."
+vcn_id         = "ocid1.vcn.oc1.ap-sydney-1.amaaaaaacvrxdpqauutji........"
+subnet_id      = "ocid1.subnet.oc1.ap-sydney-1.aaaaaa...."
 
-# ========================================
-# OCI Provider Configuration
-# ========================================
 
-# Your OCI tenancy OCID
-tenancy_ocid = "ocid1.tenancy.oc1..example"
-
-# Your OCI user OCID (for API access)
-user_ocid = "ocid1.user.oc1..example"
-
-# Your OCI API key fingerprint
-fingerprint = "aa:bb:cc:dd:ee:ff:gg:hh:ii:jj:kk:ll:mm:nn:oo:pp"
-
-# Path to your OCI private key file
-private_key_path = "~/.oci/oci_api_key.pem"
-
-# OCI region where resources will be deployed
-region = "ap-sydney-1"
-
-# ========================================
-# Compartment and Network Configuration
-# ========================================
-
-# Compartment OCID where resources will be created
-compartment_id = "ocid1.compartment.oc1..example"
-
-# Existing VCN OCID (optional, for reference)
-vcn_id = "ocid1.vcn.oc1..example"
-
-# Existing subnet OCID where the function will be deployed
-# Must be a public subnet with internet gateway access
-subnet_id = "ocid1.subnet.oc1..example"
-
-# ========================================
-# Object Storage Bucket Configuration
-# ========================================
-
-# Source bucket name where files will be scanned
-# This bucket must already exist
-source_bucket_name = "my-scan-bucket"
-
-# Quarantine bucket for malware files
-# Required when v1_file_scanner_mode is "MOVE_ALL" or "MOVE_MALWARE_ONLY"
-# This bucket must already exist
-quarantine_bucket_name = "my-quarantine-bucket"
-
-# Production bucket for clean files  
-# Required only when v1_file_scanner_mode is "MOVE_ALL"
-# This bucket must already exist
-production_bucket_name = "my-production-bucket"
-
-# ========================================
-# Vision One Configuration
-# ========================================
-
-# Vision One region (should match your Vision One account region)
+vision_one_api_key_secret_ocid = "ocid1.vaultsecret.oc1.ap-sydney-1.aaaaaaa......"
 vision_one_region = "ap-southeast-2"
+v1_scanner_endpoint = "159.13.52.241:50051"
 
-# Vision One File Security scanner endpoint
-# Update based on your region:
-# ap-southeast-2: antimalware.ap-southeast-2.cloudone.trendmicro.com:443
-# us-east-1: antimalware.us-east-1.cloudone.trendmicro.com:443
-# eu-central-1: antimalware.eu-central-1.cloudone.trendmicro.com:443
-v1_scanner_endpoint = "antimalware.ap-southeast-2.cloudone.trendmicro.com:443"
 
-# OCI Vault Secret OCID containing your Vision One API key
-# The secret should contain only the API key as plain text
-vision_one_api_key_secret_ocid = "ocid1.vaultsecret.oc1..example"
+# Scanner Configuration
+source_bucket_name      = "customer-scan-bucket"
+quarantine_bucket_name  = "customer-q-bucket"  # Optional
+production_bucket_name  = "customer-p-bucket"  # Optional
 
-# ========================================
-# Scanner Mode Configuration
-# ========================================
-
-# Scanner mode determines how files are handled after scanning
-# Valid values: "MOVE_ALL", "MOVE_MALWARE_ONLY", "TAG_ONLY"
-#
-# MOVE_ALL: Move both clean and malware files to separate buckets
-#   - Requires: production_bucket_name AND quarantine_bucket_name
-#   - Clean files go to production bucket
-#   - Malware files go to quarantine bucket
-#
-# MOVE_MALWARE_ONLY: Move only malware files to quarantine
-#   - Requires: quarantine_bucket_name
-#   - Clean files stay in source bucket with metadata tags
-#   - Malware files go to quarantine bucket
-#
-# TAG_ONLY: Only add metadata tags, no file movement
-#   - No additional buckets required
-#   - All files stay in source bucket with scan result tags
+# File Scanner Mode Configuration
+# Valid values: MOVE_ALL, MOVE_MALWARE_ONLY, TAG_ONLY
 v1_file_scanner_mode = "MOVE_MALWARE_ONLY"
+
+# ========================================
+# Docker/OCIR Configuration
+# ========================================
+
+docker_username = "<docker_username>"
+docker_auth_token = "<docker_auth_token>"
+tenancy_namespace = "<docker_namespace>"
+ocir_region = "syd.ocir.io"
+image_tag = "latest"
 
 # ========================================
 # Performance Configuration
@@ -133,34 +71,7 @@ function_memory_mb = 1024
 # 300s (5 min): Small batches
 # 900s (15 min): Medium batches - Recommended  
 # 1800s (30 min): Large batches
-function_timeout_seconds = 900
-
-# ========================================
-# Docker/OCIR Configuration
-# ========================================
-
-# Docker username for OCIR authentication
-# Format: <tenancy-namespace>/<username>
-docker_username = "my-tenancy-namespace/my-username"
-
-# Docker authentication token for OCIR
-# Generate this from your OCI user settings -> Auth tokens
-docker_auth_token = "your-auth-token-here"
-
-# Docker image tag
-image_tag = "latest"
-
-# OCIR region hostname
-# Common values:
-# ap-sydney-1: syd.ocir.io
-# us-phoenix-1: phx.ocir.io  
-# us-ashburn-1: iad.ocir.io
-# eu-frankfurt-1: fra.ocir.io
-ocir_region = "syd.ocir.io"
-
-# OCI tenancy namespace for OCIR
-# Find this in: OCI Console -> Governance -> Tenancy Details
-tenancy_namespace = "my-tenancy-namespace"
+function_timeout_seconds = 300
 
 # ========================================
 # Optional Features
@@ -168,11 +79,20 @@ tenancy_namespace = "my-tenancy-namespace"
 
 # Enable scheduled batch scanning at regular intervals
 # When enabled, creates an event rule to trigger the function periodically
-enable_scheduled_scanning = false
+enable_scheduled_scanning = true
+
+# Scan schedule - OCI Resource Scheduler limitation: minimum frequency is HOURLY
+# Testing options:
+# "0 * * * *"   = Every hour (minimum for Resource Scheduler)
+# Production options:
+# "0 2 1 * *"   = 1st of every month at 2 AM (recommended for production)
+# "0 2 * * 1"   = Every Monday at 2 AM (weekly scanning)
+scan_schedule_expression = "0 * * * *"   # Testing: hourly (minimum supported)
+# scan_schedule_expression = "0 2 1 * *"  # Production: monthly on 1st at 2 AM
 
 # Enable logging for function execution and events
 # Creates log groups and logs for monitoring function activity
-enable_logging = false
+enable_logging = true
 
 # Logging level for the function
 # Valid values: "DEBUG", "INFO", "WARNING", "ERROR"
