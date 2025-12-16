@@ -74,23 +74,18 @@ function_memory_mb = 1024
 function_timeout_seconds = 300
 
 # ========================================
-# Optional Features
+# Scheduled Scan Features
 # ========================================
 
 # Enable scheduled batch scanning at regular intervals
-# When enabled, creates an event rule to trigger the function periodically
+# When enabled, creates an resource scheduler to trigger the function periodically
 enable_scheduled_scanning = true
 
-# Alarm repeat schedule - OCI Monitoring Alarm with direct function trigger
-# Testing options:
-# "PT1H"    = Every hour (1 hour interval)
-# "PT2H"    = Every 2 hours  
-# Production options:
-# "PT24H"   = Daily (24 hour interval)
-# "PT168H"  = Weekly (168 hour interval - 7 days)
-# "PT720H"  = Monthly (720 hour interval - 30 days)
-alarm_repeat_duration = "PT1H"     # Testing: hourly (direct alarm trigger)
-# alarm_repeat_duration = "PT720H"  # Production: monthly (30 days)
+# Schedule
+#recurrence_details  = "FREQ=MONTHLY;BYMONTHDAY=1;BYHOUR=2;BYMINUTE=0"  # 1st day of every month at 2 AM
+recurrence_details  = "FREQ=HOURLY;INTERVAL=1"  # Every hour
+recurrence_type = "ICAL"
+
 
 # Enable logging for function execution and events
 # Creates log groups and logs for monitoring function activity
