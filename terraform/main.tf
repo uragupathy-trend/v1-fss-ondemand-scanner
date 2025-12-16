@@ -181,73 +181,62 @@ resource "oci_functions_function" "v1_fss_ondemand_function" {
   depends_on = [null_resource.docker_build_push]
 }
 
-# Lightweight compute instance for scheduler trigger
-# This instance will be started by Resource Scheduler, which triggers an event
-resource "oci_core_instance" "scheduler_trigger_instance" {
-  count               = var.enable_scheduled_scanning ? 1 : 0
-  compartment_id      = var.compartment_id
-  display_name        = "v1-fss-scheduler-trigger"
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
-
-  # Use the smallest Always Free eligible shape
-  shape = "VM.Standard.E2.1.Micro"
+# OCI Monitoring Alarm for scheduled function invocation
+# This creates an alarm that fires based on a schedule to trigger the function
+resource "oci_monitoring_alarm" "v1_fss_ondemand_schedule_alarm" {
+  count                         = var.enable_scheduled_scanning ? 1 : 0
+  compartment_id                = var.compartment_id
+  display_name                  = "v1-fss-ondemand-schedule-alarm"
+  metric_compartment_id         = var.compartment_id
+  namespace                     = "oci_computeagent"
   
-  shape_config {
-    memory_in_gbs = 1
-    ocpus         = 1
-  }
-
-  source_details {
-    source_id   = data.oci_core_images.oracle_linux.images[0].id
-    source_type = "image"
-  }
-
-  create_vnic_details {
-    subnet_id        = var.subnet_id
-    display_name     = "v1-fss-scheduler-trigger-vnic"
-    assign_public_ip = false
-  }
-
-  # This instance will only be started/stopped, not actually used
-  metadata = {
-    purpose = "scheduler-trigger-only"
-  }
-
+  # Use a simple metric query that will always evaluate to trigger on schedule
+  query = "CpuUtilization[1m].mean() >= 0"
+  
+  # Alarm severity
+  severity = "INFO"
+  
+  # Enable the alarm
+  is_enabled = true
+  
+  # Schedule configuration - alarm will fire repeatedly based on schedule
+  repeat_notification_duration = var.alarm_repeat_duration
+  
+  # Alarm will transition from OK to FIRING state, triggering the event
+  destinations = [oci_ons_notification_topic.v1_fss_ondemand_alarm_topic[0].topic_id]
+  
+  # Alarm body message
+  body = "Scheduled trigger for Vision One File Security malware scanning"
+  
   freeform_tags = merge(local.common_tags, {
-    "Purpose"      = "SchedulerTrigger"
-    "ScheduleType" = "Hourly"
+    "Purpose"      = "ScheduledTrigger"
+    "Architecture" = "DirectAlarmScheduler"
   })
 }
 
-# Data source for availability domains
-data "oci_identity_availability_domains" "ads" {
-  compartment_id = var.compartment_id
-}
-
-# Data source for Oracle Linux images
-data "oci_core_images" "oracle_linux" {
-  compartment_id           = var.compartment_id
-  operating_system         = "Oracle Linux"
-  operating_system_version = "8"
-  shape                    = "VM.Standard.E2.1.Micro"
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
-  state                    = "AVAILABLE"
-}
-
-# Event rule that triggers function when the scheduler instance starts
-resource "oci_events_rule" "scheduler_function_trigger" {
+# ONS Topic for alarm notifications (required for alarm to function)
+resource "oci_ons_notification_topic" "v1_fss_ondemand_alarm_topic" {
   count          = var.enable_scheduled_scanning ? 1 : 0
   compartment_id = var.compartment_id
-  display_name   = "v1-fss-scheduler-function-trigger"
-  description    = "Triggers malware scanning function when scheduler instance starts"
+  name           = "v1-fss-ondemand-alarm-topic"
+  description    = "Topic for Vision One File Security scheduling alarm notifications"
+  
+  freeform_tags = local.common_tags
+}
+
+# Event rule that triggers function when the alarm fires
+resource "oci_events_rule" "alarm_function_trigger" {
+  count          = var.enable_scheduled_scanning ? 1 : 0
+  compartment_id = var.compartment_id
+  display_name   = "v1-fss-alarm-function-trigger"
+  description    = "Triggers malware scanning function when monitoring alarm fires"
   is_enabled     = true
 
-  # Event condition: when the trigger instance starts
+  # Event condition: when the monitoring alarm changes state to FIRING
   condition = jsonencode({
-    "eventType": ["com.oraclecloud.computeapi.launchinstance"]
+    "eventType": ["com.oraclecloud.monitoring.alarm.fired"],
     "data": {
-      "resourceId": oci_core_instance.scheduler_trigger_instance[0].id
+      "alarmId": oci_monitoring_alarm.v1_fss_ondemand_schedule_alarm[0].id
     }
   })
 
@@ -260,35 +249,8 @@ resource "oci_events_rule" "scheduler_function_trigger" {
   }
 
   freeform_tags = merge(local.common_tags, {
-    "Purpose"      = "SchedulerTrigger"
-    "TriggerType"  = "InstanceStart"
-  })
-}
-
-# OCI Resource Scheduler for scheduled scanning
-# This schedules the trigger instance to start hourly
-resource "oci_resource_scheduler_schedule" "v1_fss_ondemand_schedule" {
-  count          = var.enable_scheduled_scanning ? 1 : 0
-  compartment_id = var.compartment_id
-  display_name   = "v1-fss-ondemand-schedule"
-  description    = "Schedule for Vision One File Security scanning via instance trigger"
-  
-  # Hourly scanning schedule - start time must be in the future
-  time_starts        = timeadd(timestamp(), "5m")  # Start 5 minutes from now
-  recurrence_details = var.scan_schedule_expression  # Use variable for flexibility
-  recurrence_type    = "CRON"
-  
-  # Start the trigger instance (which fires the event → triggers function)
-  action = "START_RESOURCE"
-  
-  resources {
-    id = oci_core_instance.scheduler_trigger_instance[0].id
-  }
-  
-  freeform_tags = merge(local.common_tags, {
-    "ScheduleType" = "Recurring"
-    "Purpose"      = "MalwareScanning"
-    "Architecture" = "HybridScheduler"
+    "Purpose"      = "DirectSchedulerTrigger"
+    "TriggerType"  = "AlarmFired"
   })
 }
 

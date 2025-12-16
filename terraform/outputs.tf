@@ -89,25 +89,25 @@ output "function_log_id" {
   value       = var.enable_logging ? oci_logging_log.v1_fss_ondemand_function_log[0].id : null
 }
 
-# Scheduled Scanning Outputs (conditional)
-output "scheduler_id" {
-  description = "OCID of the resource scheduler (if scheduled scanning is enabled)"
-  value       = var.enable_scheduled_scanning ? oci_resource_scheduler_schedule.v1_fss_ondemand_schedule[0].id : null
+# Scheduled Scanning Outputs (conditional) - Monitoring Alarm Based
+output "monitoring_alarm_id" {
+  description = "OCID of the monitoring alarm for scheduled scanning (if enabled)"
+  value       = var.enable_scheduled_scanning ? oci_monitoring_alarm.v1_fss_ondemand_schedule_alarm[0].id : null
 }
 
-output "scheduler_state" {
-  description = "State of the resource scheduler (if scheduled scanning is enabled)"
-  value       = var.enable_scheduled_scanning ? oci_resource_scheduler_schedule.v1_fss_ondemand_schedule[0].state : null
+output "alarm_topic_id" {
+  description = "OCID of the ONS topic for alarm notifications (if scheduled scanning is enabled)"
+  value       = var.enable_scheduled_scanning ? oci_ons_notification_topic.v1_fss_ondemand_alarm_topic[0].topic_id : null
 }
 
-output "trigger_instance_id" {
-  description = "OCID of the trigger instance for scheduled scanning (if enabled)"
-  value       = var.enable_scheduled_scanning ? oci_core_instance.scheduler_trigger_instance[0].id : null
+output "alarm_repeat_duration" {
+  description = "Alarm repeat schedule configuration"
+  value       = var.enable_scheduled_scanning ? var.alarm_repeat_duration : null
 }
 
 output "event_rule_id" {
-  description = "OCID of the event rule that triggers function from instance start (if scheduled scanning is enabled)"
-  value       = var.enable_scheduled_scanning ? oci_events_rule.scheduler_function_trigger[0].id : null
+  description = "OCID of the event rule that triggers function from alarm (if scheduled scanning is enabled)"
+  value       = var.enable_scheduled_scanning ? oci_events_rule.alarm_function_trigger[0].id : null
 }
 
 # Quick Reference Commands

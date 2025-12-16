@@ -162,10 +162,10 @@ variable "enable_scheduled_scanning" {
   default     = false
 }
 
-variable "scan_schedule_expression" {
-  description = "Cron-like expression for scan schedule. OCI Resource Scheduler minimum frequency is HOURLY. Examples: '0 * * * *' (hourly), '0 2 1 * *' (monthly)"
+variable "alarm_repeat_duration" {
+  description = "ISO 8601 duration for alarm repeat interval. Examples: 'PT1H' (hourly), 'PT24H' (daily), 'PT168H' (weekly). Replaces scan_schedule_expression for direct alarm scheduling."
   type        = string
-  default     = "0 * * * *"  # Hourly (minimum supported by Resource Scheduler)
+  default     = "PT1H"  # Hourly - 1 hour interval
 }
 
 # Logging Configuration

@@ -81,14 +81,16 @@ function_timeout_seconds = 300
 # When enabled, creates an event rule to trigger the function periodically
 enable_scheduled_scanning = true
 
-# Scan schedule - OCI Resource Scheduler limitation: minimum frequency is HOURLY
+# Alarm repeat schedule - OCI Monitoring Alarm with direct function trigger
 # Testing options:
-# "0 * * * *"   = Every hour (minimum for Resource Scheduler)
+# "PT1H"    = Every hour (1 hour interval)
+# "PT2H"    = Every 2 hours  
 # Production options:
-# "0 2 1 * *"   = 1st of every month at 2 AM (recommended for production)
-# "0 2 * * 1"   = Every Monday at 2 AM (weekly scanning)
-scan_schedule_expression = "0 * * * *"   # Testing: hourly (minimum supported)
-# scan_schedule_expression = "0 2 1 * *"  # Production: monthly on 1st at 2 AM
+# "PT24H"   = Daily (24 hour interval)
+# "PT168H"  = Weekly (168 hour interval - 7 days)
+# "PT720H"  = Monthly (720 hour interval - 30 days)
+alarm_repeat_duration = "PT1H"     # Testing: hourly (direct alarm trigger)
+# alarm_repeat_duration = "PT720H"  # Production: monthly (30 days)
 
 # Enable logging for function execution and events
 # Creates log groups and logs for monitoring function activity
