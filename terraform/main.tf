@@ -181,79 +181,6 @@ resource "oci_functions_function" "v1_fss_ondemand_function" {
   depends_on = [null_resource.docker_build_push]
 }
 
-# OCI Monitoring Alarm for scheduled function invocation
-# This creates an alarm that fires based on a schedule to trigger the function
-resource "oci_monitoring_alarm" "v1_fss_ondemand_schedule_alarm" {
-  count                         = var.enable_scheduled_scanning ? 1 : 0
-  compartment_id                = var.compartment_id
-  display_name                  = "v1-fss-ondemand-schedule-alarm"
-  metric_compartment_id         = var.compartment_id
-  namespace                     = "oci_computeagent"
-  
-  # Use a simple metric query that will always evaluate to trigger on schedule
-  query = "CpuUtilization[1m].mean() >= 0"
-  
-  # Alarm severity
-  severity = "INFO"
-  
-  # Enable the alarm
-  is_enabled = true
-  
-  # Schedule configuration - alarm will fire repeatedly based on schedule
-  repeat_notification_duration = var.alarm_repeat_duration
-  
-  # Alarm will transition from OK to FIRING state, triggering the event
-  destinations = [oci_ons_notification_topic.v1_fss_ondemand_alarm_topic[0].topic_id]
-  
-  # Alarm body message
-  body = "Scheduled trigger for Vision One File Security malware scanning"
-  
-  freeform_tags = merge(local.common_tags, {
-    "Purpose"      = "ScheduledTrigger"
-    "Architecture" = "DirectAlarmScheduler"
-  })
-}
-
-# ONS Topic for alarm notifications (required for alarm to function)
-resource "oci_ons_notification_topic" "v1_fss_ondemand_alarm_topic" {
-  count          = var.enable_scheduled_scanning ? 1 : 0
-  compartment_id = var.compartment_id
-  name           = "v1-fss-ondemand-alarm-topic"
-  description    = "Topic for Vision One File Security scheduling alarm notifications"
-  
-  freeform_tags = local.common_tags
-}
-
-# Event rule that triggers function when the alarm fires
-resource "oci_events_rule" "alarm_function_trigger" {
-  count          = var.enable_scheduled_scanning ? 1 : 0
-  compartment_id = var.compartment_id
-  display_name   = "v1-fss-alarm-function-trigger"
-  description    = "Triggers malware scanning function when monitoring alarm fires"
-  is_enabled     = true
-
-  # Event condition: when the monitoring alarm changes state to FIRING
-  condition = jsonencode({
-    "eventType": ["com.oraclecloud.monitoring.alarm.fired"],
-    "data": {
-      "alarmId": oci_monitoring_alarm.v1_fss_ondemand_schedule_alarm[0].id
-    }
-  })
-
-  actions {
-    actions {
-      action_type = "FAAS"
-      is_enabled  = true
-      function_id = oci_functions_function.v1_fss_ondemand_function.id
-    }
-  }
-
-  freeform_tags = merge(local.common_tags, {
-    "Purpose"      = "DirectSchedulerTrigger"
-    "TriggerType"  = "AlarmFired"
-  })
-}
-
 # Optional Log Group for Function (only created if logging is enabled)
 resource "oci_logging_log_group" "v1_fss_ondemand_log_group" {
   count          = var.enable_logging ? 1 : 0
@@ -281,4 +208,59 @@ resource "oci_logging_log" "v1_fss_ondemand_function_log" {
   }
 
   freeform_tags = local.common_tags
+}
+
+# Dynamic Group for Resource Scheduler (only created if scheduled scanning is enabled)
+resource "oci_identity_dynamic_group" "v1_fss_ondemand_scheduler_dynamic_group" {
+  count          = var.enable_scheduled_scanning ? 1 : 0
+  compartment_id = var.tenancy_ocid
+  name           = "v1-fss-ondemand-scheduler-dynamic-group"
+  description    = "Dynamic group for Vision One File Security Ondemand Scanner resource scheduler"
+  
+  matching_rule = "ALL {resource.type = 'resourceschedule', resource.compartment.id = '${var.compartment_id}'}"
+  
+  freeform_tags = local.common_tags
+}
+
+# IAM Policy for Resource Scheduler (only created if scheduled scanning is enabled)
+resource "oci_identity_policy" "v1_fss_ondemand_scheduler_policy" {
+  count          = var.enable_scheduled_scanning ? 1 : 0
+  compartment_id = var.compartment_id
+  name           = "v1-fss-ondemand-scheduler-policy"
+  description    = "Policy for Vision One File Security Ondemand Scanner resource scheduler"
+  
+  statements = [
+    "Allow dynamic-group v1-fss-ondemand-scheduler-dynamic-group to use fn-function in compartment id ${var.compartment_id}",
+    "Allow dynamic-group v1-fss-ondemand-scheduler-dynamic-group to use fn-invocation in compartment id ${var.compartment_id}"
+  ]
+  
+  freeform_tags = local.common_tags
+  depends_on = [oci_identity_dynamic_group.v1_fss_ondemand_scheduler_dynamic_group]
+}
+
+# Resource Scheduler Schedule (only created if scheduled scanning is enabled)
+resource "oci_resource_scheduler_schedule" "v1_fss_ondemand_schedule" {
+  count          = var.enable_scheduled_scanning ? 1 : 0
+  compartment_id = var.compartment_id
+  display_name   = "v1-fss-ondemand-scan-schedule"
+  description    = "Scheduled batch scanning for Vision One File Security Ondemand Scanner"
+  
+  action         = "START_RESOURCE"
+  recurrence_details = var.recurrence_details
+  recurrence_type    = var.recurrence_type
+  state = "ACTIVE"
+
+  # Target resources (the function to be invoked)
+  resources {
+    id = oci_functions_function.v1_fss_ondemand_function.id
+    metadata = {
+      payload = jsonencode({
+        source_bucket = var.source_bucket_name
+        scan_trigger  = "scheduled"
+      })
+    }
+  }
+
+  freeform_tags = local.common_tags
+  depends_on = [oci_identity_policy.v1_fss_ondemand_scheduler_policy]
 }

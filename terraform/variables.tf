@@ -162,10 +162,16 @@ variable "enable_scheduled_scanning" {
   default     = false
 }
 
-variable "alarm_repeat_duration" {
-  description = "ISO 8601 duration for alarm repeat interval. Examples: 'PT1H' (hourly), 'PT24H' (daily), 'PT168H' (weekly). Replaces scan_schedule_expression for direct alarm scheduling."
+variable "recurrence_details" {
+  description = "ICAL recurrence pattern for scheduled scanning"
   type        = string
-  default     = "PT1H"  # Hourly - 1 hour interval
+  default     = "FREQ=MONTHLY;BYMONTHDAY=1;BYHOUR=2;BYMINUTE=0"
+}
+
+variable "recurrence_type" {
+  description = "Recurrence type for scheduled scanning"
+  type        = string
+  default     = "ICAL"
 }
 
 # Logging Configuration

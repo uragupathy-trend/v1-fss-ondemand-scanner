@@ -89,27 +89,6 @@ output "function_log_id" {
   value       = var.enable_logging ? oci_logging_log.v1_fss_ondemand_function_log[0].id : null
 }
 
-# Scheduled Scanning Outputs (conditional) - Monitoring Alarm Based
-output "monitoring_alarm_id" {
-  description = "OCID of the monitoring alarm for scheduled scanning (if enabled)"
-  value       = var.enable_scheduled_scanning ? oci_monitoring_alarm.v1_fss_ondemand_schedule_alarm[0].id : null
-}
-
-output "alarm_topic_id" {
-  description = "OCID of the ONS topic for alarm notifications (if scheduled scanning is enabled)"
-  value       = var.enable_scheduled_scanning ? oci_ons_notification_topic.v1_fss_ondemand_alarm_topic[0].topic_id : null
-}
-
-output "alarm_repeat_duration" {
-  description = "Alarm repeat schedule configuration"
-  value       = var.enable_scheduled_scanning ? var.alarm_repeat_duration : null
-}
-
-output "event_rule_id" {
-  description = "OCID of the event rule that triggers function from alarm (if scheduled scanning is enabled)"
-  value       = var.enable_scheduled_scanning ? oci_events_rule.alarm_function_trigger[0].id : null
-}
-
 # Quick Reference Commands
 output "function_invoke_command" {
   description = "OCI CLI command to invoke the function manually"
@@ -124,6 +103,32 @@ output "function_logs_command" {
 output "docker_push_command" {
   description = "Command to manually push updated container image"
   value = "cd ../function && docker build --platform linux/amd64 -t ${var.ocir_region}/${var.tenancy_namespace}/${oci_artifacts_container_repository.v1_fss_ondemand_repo.display_name}:${var.image_tag} . && docker push ${var.ocir_region}/${var.tenancy_namespace}/${oci_artifacts_container_repository.v1_fss_ondemand_repo.display_name}:${var.image_tag}"
+}
+
+# Resource Scheduler Outputs (conditional - only if scheduled scanning is enabled)
+output "scheduler_schedule_id" {
+  description = "OCID of the resource scheduler schedule (if scheduled scanning is enabled)"
+  value       = var.enable_scheduled_scanning ? oci_resource_scheduler_schedule.v1_fss_ondemand_schedule[0].id : null
+}
+
+output "scheduler_dynamic_group_id" {
+  description = "OCID of the resource scheduler dynamic group (if scheduled scanning is enabled)"
+  value       = var.enable_scheduled_scanning ? oci_identity_dynamic_group.v1_fss_ondemand_scheduler_dynamic_group[0].id : null
+}
+
+output "scheduler_policy_id" {
+  description = "OCID of the resource scheduler IAM policy (if scheduled scanning is enabled)"
+  value       = var.enable_scheduled_scanning ? oci_identity_policy.v1_fss_ondemand_scheduler_policy[0].id : null
+}
+
+output "scheduler_configuration" {
+  description = "Resource scheduler configuration summary"
+  value = {
+    scheduled_scanning_enabled = var.enable_scheduled_scanning
+    schedule_state           = var.enable_scheduled_scanning ? oci_resource_scheduler_schedule.v1_fss_ondemand_schedule[0].state : "Disabled"
+    next_run_time           = var.enable_scheduled_scanning ? "Check OCI Console for next scheduled run" : "Scheduling not enabled"
+    schedule_display_name   = var.enable_scheduled_scanning ? oci_resource_scheduler_schedule.v1_fss_ondemand_schedule[0].display_name : "N/A"
+  }
 }
 
 # Performance Insights
