@@ -217,12 +217,20 @@ class BatchScanner:
             else:
                 logger.info(f"No atse result found in scan data for the object {object_name}")
             
+            # Extract pattern version from atse result (same approach as v1-fss-scanner)
+            engine_version = atse_result.get('version', {}).get('engine', '')
+            lptvpn_version = atse_result.get('version', {}).get('lptvpn', '')
+            pattern_version = f"{engine_version}-{lptvpn_version}"
+            logger.info(f"Engine Version: {engine_version}")
+            logger.info(f"LPTVPN Version: {lptvpn_version}")
+            logger.info(f"Pattern Version: {pattern_version}")
+            
             return {
                 "object_name": object_name,
                 "is_malware_detected": is_malware_detected,
                 "scan_id": scan_data.get('scanId'),
                 "file_sha256": scan_data.get('fileSHA256'),
-                "scanner_version": scan_data.get('scannerVersion')
+                "scanner_version": pattern_version
             }
             
         except Exception as e:
